@@ -2,21 +2,56 @@ import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Search from './Search';
 import Sort from './Sort';
+import Pagination from './Pagination';
 
 
 function Products({products, setProducts, getQuery, addCart}) {
 
-    //const allCategories = ['All', 'All', ...products.map(product => product.category)];
-    const [categories, setCategories] = useState(['All', 'All', ...products.map(product => product.category)]);
-    //const [categories, setCategories] = useState([]);
+    //State Category
+    const allCategories = ['All', ...products.map(product => product.category)];
+    const [categories, setCategories] = useState(allCategories);
+    
+    //State Pagination
+    const [currentPage, setCurrentPage] = useState(1);
+    const [productsPerPage, setProductsPerPage] = useState(4);
 
+
+
+    // Kiểm tra category r thêm vào mảng sau 
+    const [checkCategory, setCheckCategory] = useState(products);
+    console.log(typeof checkCategory)
+
+    //lưu lại dữ liệu product (sửa lỗi load lại trang nhưng mất dữ liệu product)
+    useEffect(() => {
+        setCheckCategory(products)     
+    }, [products])
+
+    //lưu lại dữ liệu category (sửa lỗi load lại trang nhưng mất dữ liệu category)
+    useEffect(() => {
+        const categories = JSON.parse(localStorage.getItem('categories'))
+        if(categories) setCategories(categories)
+      }, [])
+
+    useEffect(() => {
+        localStorage.setItem('categories', JSON.stringify(allCategories))
+      }, [allCategories])
+
+
+    //Kiểm tra xem Category thuộc loại nào
     const getCategoryProduct = (category) => {
-        return products.filter(product => product.category === category)
+        if (category == 'All') {
+            setCheckCategory(products);
+        } else {
+            const getCategoryProduct = products.filter(product => product.category === category);
+            setCheckCategory(getCategoryProduct);
+        }
     }
+    
+
     //Sort
     const [sortType, setSortType] = useState("")
 
-    const sortedTitle = products.sort((a,b) => { 
+    const sortedTitle = checkCategory.sort((a,b) => { 
         if(sortType === 'Titleasc'){
             const isTitle = 1;
             return isTitle * a.title.localeCompare(b.title);
@@ -26,7 +61,7 @@ function Products({products, setProducts, getQuery, addCart}) {
         };    
     });
 
-    const sortedPrice = products.sort((c,d) => {
+    const sortedPrice = checkCategory.sort((c,d) => {
         if(sortType === 'Priceasc'){
             const isPrice = 1;
             return isPrice * c.price.localeCompare(d.price);
@@ -36,12 +71,13 @@ function Products({products, setProducts, getQuery, addCart}) {
         };
     });
 
+    //Pagination lay so product hien tai tren 1 trang
+    const indexOfLastProduct = currentPage * productsPerPage;
+    const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+    const currentProduct = checkCategory.slice(indexOfFirstProduct, indexOfLastProduct);
 
-    //Lấy ra những category trong product
-    // const filterCategory = (category) => {
-    //     const filteredData = products.filter(product => product.category === category);
-    //     setProducts(filteredData);
-    // }
+    //Pagination thay doi so trang khi click
+    const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
     return (
         <section className="section all-products" id="products">
@@ -52,23 +88,28 @@ function Products({products, setProducts, getQuery, addCart}) {
             <Sort getSortType={(s) => setSortType(s)} />
             <span><i className="bx bx-chevron-down" /></span>
             </form>
-            <form>
-            <select onChange={(e) => setCategories(e.target.value)}>
+            {/* <form>
+            <select onChange={(e) => setCheckCategory(e.target.value)}>
                 {
-                    categories.map(category => {
-                            <option value={() => getCategoryProduct(category)}>{category.category}</option> 
-                        })
+                    categories.map((category, index) => (
+                            <option value={() => getCategoryProduct(category)} key={index}>{category}</option> 
+                    ))
                 }
             </select>
             <span><i className="bx bx-chevron-down" /></span>
-            </form>
-
-            {/* <button type="button" onClick={() => filterCategory('violet')}>All</button> */}
+            </form> */}
+            <div>
+                {
+                    categories.map((category,index) => (
+                        <button type="submit" onClick={() => getCategoryProduct(category)} key={index}>{category}</button>
+                    ))
+                }
+            </div>           
 
         </div>
         <div className="product-center container">
         {
-            products.map(product => (
+            currentProduct.map(product => (
                 <div className="product" key={product.id}>
                     <div className="product-header">
                         <img src={product.image} alt="" />
@@ -87,12 +128,13 @@ function Products({products, setProducts, getQuery, addCart}) {
                         <i className="bx bxs-star" />
                         <i className="bx bx-star" />
                         </div>
-                        <h4 className="price">${product.price}</h4>
+                        <h4 className="price">${Math.round(product.price)}</h4>
                     </div>
                 </div>
             ))
         }
-        </div>
+        </div>  
+        <Pagination totalProducts={checkCategory.length} productsPerPage={productsPerPage} paginate={paginate} />
         </section>
 
     )

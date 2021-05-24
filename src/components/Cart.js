@@ -35,7 +35,7 @@ function Cart({cart, setCart, setQuantity}) {
                             <img src={product.image} alt />
                             <div>
                             <p>{product.title}</p>
-                            <span>Price: ${product.price}</span>
+                            <span>Price: ${Math.round(product.price)}</span>
                             <br/>
                             <Link to="#" onClick={() => removeCart(product)}>Remove</Link>
                             </div>
